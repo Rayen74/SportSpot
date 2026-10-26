@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SportSpot Hero</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <script>
+        // Automatic fallback handler if WebGL or CDN network fails
+        window.addEventListener('error', function(e) {
+            console.warn('Script/WebGL resource error:', e);
+            var fallback = document.getElementById('static-fallback');
+            if (fallback) {
+                fallback.classList.remove('hidden');
+                fallback.setAttribute('aria-hidden', 'false');
+            }
+        }, true);
+    </script>
+
+    <!-- Version-matched import map for local Three.js vendor dependencies -->
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "./vendor/three.module.js",
+            "three/addons/environments/RoomEnvironment.js": "./vendor/RoomEnvironment.js"
+          }
+        }
+    </script>
+</head>
+<body>
+<div id="app-container">
+    <!-- WebGL Canvas Layer -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Accessible DOM Overlay & Touch Target Layer -->
+    <main id="ui-overlay" class="ui-layer" aria-label="SportSpot Welcome Screen">
+        <!-- Main Hero View -->
+        <section id="view-hero" class="view-panel active" aria-hidden="false">
+            <header class="hero-header">
+                <div class="brand-badge" aria-label="SportSpot Logo">
+                    <svg class="brand-icon" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="3" width="18" height="18" rx="4" stroke="#F97316" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3.5" fill="#F97316"/>
+                        <path d="M12 3V21M3 12H21" stroke="#F97316" stroke-width="1.5" stroke-opacity="0.4"/>
+                    </svg>
+                    <span class="brand-name">SportSpot</span>
+                </div>
+            </header>
+
+            <div class="hero-content">
+                <p class="eyebrow">YOUR NEXT GAME STARTS HERE</p>
+                <h1 class="headline">Find your field.<br>Own your game.</h1>
+                <p class="subtitle">Discover sports fields, check available times and book your next match.</p>
+
+                <div class="actions-group">
+                    <a href="sportspot://find-fields" id="btn-find-field" class="btn-primary" role="button">
+                        <span>Find a field</span>
+                    </a>
+                    <button id="btn-how-it-works" class="btn-secondary" type="button">
+                        How it works &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <footer class="hero-footer">
+                <p class="sports-tags">FOOTBALL &middot; PADEL &middot; TENNIS &middot; BASKETBALL</p>
+            </footer>
+        </section>
+
+        <!-- Second View: Booking Journey -->
+        <section id="view-journey" class="view-panel hidden" aria-hidden="true">
+            <nav class="back-nav-container">
+                <button id="btn-back" class="btn-back-shard" type="button" aria-label="Go back">
+                    <span class="back-text">&larr; Back</span>
+                </button>
+            </nav>
+
+            <div class="journey-content">
+                <p class="eyebrow">THE SPORTSPOT EXPERIENCE</p>
+                <h2 class="journey-title">From discovery to kickoff.</h2>
+                <p class="journey-intro">Everything you need to find a field and organize your next game.</p>
+
+                <ol class="journey-steps">
+                    <li class="step-item">
+                        <span class="step-label">Discover</span> &mdash;
+                        <span class="step-desc">Find sports centers around you.</span>
+                    </li>
+                    <li class="step-item">
+                        <span class="step-label">Compare</span> &mdash;
+                        <span class="step-desc">Check sports, prices and available times.</span>
+                    </li>
+                    <li class="step-item">
+                        <span class="step-label">Choose</span> &mdash;
+                        <span class="step-desc">Select a field and a suitable time slot.</span>
+                    </li>
+                    <li class="step-item">
+                        <span class="step-label">Book</span> &mdash;
+                        <span class="step-desc">Submit a reservation securely.</span>
+                    </li>
+                    <li class="step-item">
+                        <span class="step-label">Play</span> &mdash;
+                        <span class="step-desc">Arrive ready for your game.</span>
+                    </li>
+                </ol>
+            </div>
+        </section>
+    </main>
+
+    <!-- Static Fallback (for WebGL failure or reduced motion) -->
+    <div id="static-fallback" class="fallback-layer hidden" aria-hidden="true">
+        <div class="fallback-card">
+            <p class="eyebrow">YOUR NEXT GAME STARTS HERE</p>
+            <h1 class="headline">Find your field.<br>Own your game.</h1>
+            <p class="subtitle">Discover sports fields, check available times and book your next match.</p>
+            <div class="actions-group">
+                <a href="sportspot://find-fields" class="btn-primary" role="button">Find a field</a>
+                <button id="btn-fallback-how" class="btn-secondary" type="button">How it works &rarr;</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
