@@ -20,6 +20,9 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.sportspot.auth.LoginActivity;
+import com.example.sportspot.auth.TokenManager;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
 
@@ -134,11 +137,14 @@ public class MainActivity extends AppCompatActivity {
         public boolean shouldOverrideUrlLoading(@NonNull WebView view, @NonNull WebResourceRequest request) {
             Uri uri = request.getUrl();
 
-            // Intercept only custom SportSpot action schemes
+            // Intercept custom SportSpot action schemes
             if (TARGET_SCHEME.equalsIgnoreCase(uri.getScheme())) {
                 String host = uri.getHost();
                 if (ACTION_FIND_FIELDS.equalsIgnoreCase(host)) {
                     navigateToNativeFieldDiscovery();
+                    return true;
+                } else if ("login".equalsIgnoreCase(host) || "auth".equalsIgnoreCase(host)) {
+                    startActivity(new Intent(MainActivity.this, LoginActivity.class));
                     return true;
                 } else {
                     Log.w(TAG, "Unrecognized SportSpot action: " + host);
@@ -156,18 +162,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Handover point into the existing native SportSpot booking screen.
-     * Replace this placeholder with your native Activity, Navigation Component or Fragment call.
-     */
     private void navigateToNativeFieldDiscovery() {
-        Log.i(TAG, "Navigating to native Booking/Field Discovery Activity...");
-
-        // Example integration:
-        // Intent intent = new Intent(this, FieldDiscoveryActivity.class);
-        // startActivity(intent);
-
-        Toast.makeText(this, "Navigating to Native Field Discovery...", Toast.LENGTH_SHORT).show();
+        TokenManager tokenManager = new TokenManager(this);
+        if (!tokenManager.hasToken()) {
+            Toast.makeText(this, "Please sign in to continue.", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, LoginActivity.class));
+        } else {
+            Toast.makeText(this, "Welcome " + tokenManager.getUserName() + "! Navigating to Field Discovery...", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
