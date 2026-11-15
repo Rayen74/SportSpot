@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sportify.auth.JwtServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-15T00:49:18.433Z" hostname="DESKTOP-RUBE0CT" time="0.021">
+  <properties/>
+  <testcase name="testVerifyNullOrEmptyToken" classname="com.sportify.auth.JwtServiceTest" time="0.001"/>
+  <testcase name="testVerifyInvalidToken" classname="com.sportify.auth.JwtServiceTest" time="0.006"/>
+  <testcase name="testGenerateAndVerifyToken" classname="com.sportify.auth.JwtServiceTest" time="0.014"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[nov. 15, 2026 1:49:18 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:18 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:18 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+]]></system-err>
+</testsuite>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.sportify.auth.AuthServiceTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-15T00:49:16.742Z" hostname="DESKTOP-RUBE0CT" time="1.688">
+  <properties/>
+  <testcase name="testUnknownEmailLoginFails" classname="com.sportify.auth.AuthServiceTest" time="0.163"/>
+  <testcase name="testDuplicateEmailRegistrationFails" classname="com.sportify.auth.AuthServiceTest" time="0.298"/>
+  <testcase name="testShortPasswordRegistrationFails" classname="com.sportify.auth.AuthServiceTest" time="0.001"/>
+  <testcase name="testSuccessfulRegistration" classname="com.sportify.auth.AuthServiceTest" time="0.248"/>
+  <testcase name="testSuccessfulLogin" classname="com.sportify.auth.AuthServiceTest" time="0.485"/>
+  <testcase name="testInvalidEmailRegistrationFails" classname="com.sportify.auth.AuthServiceTest" time="0.001"/>
+  <testcase name="testIncorrectPasswordLoginFails" classname="com.sportify.auth.AuthServiceTest" time="0.489"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[nov. 15, 2026 1:49:16 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:16 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:17 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:17 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:17 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:17 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+nov. 15, 2026 1:49:17 AM com.sportify.config.AppConfig <init>
+INFO: Application configuration loaded successfully. Target DB URL: jdbc:postgresql://localhost:5432/Sportity
+]]></system-err>
+</testsuite>

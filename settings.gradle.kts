@@ -23,4 +23,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SportSpot"
-include(":app")
+include(":app", ":backend")
