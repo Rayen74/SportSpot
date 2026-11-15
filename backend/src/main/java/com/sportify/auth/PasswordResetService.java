@@ -60,7 +60,14 @@ public class PasswordResetService {
             ps.setTimestamp(3, Timestamp.from(expiresAt));
             ps.executeUpdate();
 
-            emailService.sendPasswordResetEmail(user.getEmail(), rawToken);
+            final String recipientEmail = user.getEmail();
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    emailService.sendPasswordResetEmail(recipientEmail, rawToken);
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE, "Error sending password reset email asynchronously", e);
+                }
+            });
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Failed to create password reset token for user ID: " + user.getId(), e);
         }

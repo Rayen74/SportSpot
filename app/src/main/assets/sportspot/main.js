@@ -2,9 +2,12 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 /**
- * SportSpot Hero 3D Renderer & Interface Controller
- * Optimized for mid-range Android devices, low GPU fill cost, zero memory leaks,
- * demand-driven render scheduling, and lifecycle safety.
+ * SportSpot Welcome Screen 3D Renderer & Transition Controller
+ * Features:
+ * - 3D Glass-shard hero background with PBR physical material & iridescence.
+ * - Touch tilt interaction and dynamic touch-glow fragment shader.
+ * - Dedicated, lightweight ~280ms 3D Sign In exit transition.
+ * - Mobile GPU optimizations, demand-driven render scheduler, lifecycle integration.
  */
 
 // Global state & configuration
@@ -12,12 +15,11 @@ const CONFIG = {
   refWidth: 390,
   refHeight: 844,
   iridescenceRange: [250, 650],
-  shatterDuration: 1.2,
   isLowEndDevice: (typeof navigator !== 'undefined' && navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4),
   reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches
 };
 
-// Adaptive Quality Tiers: LOW, MEDIUM, HIGH
+// Adaptive Quality Tiers
 const QUALITY = {
   tier: CONFIG.reducedMotion ? 'LOW' : (CONFIG.isLowEndDevice ? 'LOW' : 'MEDIUM'),
   maxPixelRatio: CONFIG.isLowEndDevice ? 1.25 : 1.5,
@@ -25,26 +27,10 @@ const QUALITY = {
   bevelSegments: CONFIG.isLowEndDevice ? 1 : 2
 };
 
-// Expose globals early on window object for Chrome DevTools inspection & native Activity lifecycle control
-window.CONFIG = CONFIG;
-window.QUALITY = QUALITY;
-window.SportSpotHero = {
-  dispose: () => dispose(),
-  pause: () => {
-    isSceneActive = false;
-    if (animFrameId) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
-    isRenderLoopRunning = false;
-  },
-  resume: () => {
-    isSceneActive = true;
-    clock.getDelta();
-    renderFrame();
-    requestDemandFrame();
-  }
-};
+let isTransitioning = false;
+let isSceneActive = true;
+let isRenderLoopRunning = false;
+let animFrameId = null;
 
 let renderer = null;
 let scene = null;
@@ -55,10 +41,6 @@ let glassMaterial = null;
 let shards = [];
 let shardGroup = null;
 
-let isShattered = false;
-let isReassembling = false;
-let shatterProgress = 0.0;
-
 let touchX = 0;
 let touchY = 0;
 let targetTiltX = 0;
@@ -66,10 +48,6 @@ let targetTiltY = 0;
 let currentTiltX = 0;
 let currentTiltY = 0;
 let panelScale = 1.0;
-
-let animFrameId = null;
-let isRenderLoopRunning = false;
-let isSceneActive = true; // false when on Journey view or backgrounded
 let isPointerDown = false;
 
 const clock = new THREE.Clock();
@@ -81,6 +59,33 @@ const touchUniforms = {
   uTouchPos: { value: new THREE.Vector2(-999, -999) },
   uTouchIntensity: { value: 0.0 },
   uScale: { value: 1.0 }
+};
+
+// Expose globals early for DevTools & Android lifecycle
+window.CONFIG = CONFIG;
+window.QUALITY = QUALITY;
+window.SportSpotHero = {
+  dispose: () => dispose(),
+  pause: () => {
+    isSceneActive = false;
+    isTransitioning = false;
+    if (animFrameId) {
+      cancelAnimationFrame(animFrameId);
+      animFrameId = null;
+    }
+    isRenderLoopRunning = false;
+  },
+  resume: () => {
+    isSceneActive = true;
+    isTransitioning = false;
+    if (shardGroup) {
+      shardGroup.position.z = 0;
+      shardGroup.rotation.y = 0;
+    }
+    clock.getDelta();
+    renderFrame();
+    requestDemandFrame();
+  }
 };
 
 // Polygon layout normalized to [0, 1] panel space
@@ -103,7 +108,7 @@ const CELLS = [
   { id: 'E', name: 'right', pts: [CUTS.T2, [1, 0], [1, 1], CUTS.B1, CUTS.J2] }
 ];
 
-// Event listener references for clean teardown
+// Listener references for teardown
 let boundPointerDown = null;
 let boundPointerMove = null;
 let boundPointerUp = null;
@@ -111,19 +116,15 @@ let boundResize = null;
 let boundVisibility = null;
 
 /**
- * Entry Point: Progressive UI startup
+ * Entry Point: Setup UI & Progressive WebGL initialization
  */
 function init() {
-  // Step 1: Register UI controls immediately so navigation is interactive before 3D loads
   setupUIEvents();
 
-  // Step 2: If user prefers reduced motion or WebGL is unsupported, static HTML is ready
   if (CONFIG.reducedMotion) {
-    console.info('Reduced motion preference active. Using static presentation.');
     return;
   }
 
-  // Step 3: Progressive WebGL scene construction
   const canvas = document.getElementById('webgl-canvas');
   if (!canvas) return;
 
@@ -137,7 +138,7 @@ function init() {
       depth: true
     });
   } catch (e) {
-    console.warn('WebGL initialization failed, falling back to static UI:', e);
+    console.warn('WebGL initialization failed, falling back to static presentation:', e);
     showFallback();
     return;
   }
@@ -153,7 +154,6 @@ function init() {
   camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
   camera.position.set(0, 0, 7.5);
 
-  // Shared PMREM Environment Texture
   pmremGenerator = new THREE.PMREMGenerator(renderer);
   pmremGenerator.compileEquirectangularShader();
   const roomEnv = new RoomEnvironment();
@@ -181,7 +181,6 @@ function init() {
   boundVisibility = onVisibilityChange;
   document.addEventListener('visibilitychange', boundVisibility);
 
-  // Render initial frame & start demand-driven loop
   renderFrame();
   requestDemandFrame();
 }
@@ -260,25 +259,10 @@ function buildGlassShards() {
     const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
     const mesh = new THREE.Mesh(geometry, glassMaterial);
 
-    const shatterAxis = new THREE.Vector3(
-      (Math.random() - 0.5) * 2,
-      (Math.random() - 0.5) * 2,
-      (Math.random() - 0.5) * 2
-    ).normalize();
-    const shatterAngle = Math.PI * (0.8 + Math.random() * 0.8);
-
     mesh.userData = {
       id: cell.id,
       basePos: mesh.position.clone(),
       origQuaternion: mesh.quaternion.clone(),
-      shatterPos: mesh.position.clone().add(new THREE.Vector3(
-        (Math.random() - 0.5) * 6.0,
-        (Math.random() - 0.5) * 6.0,
-        Math.random() * 3.0 + 1.5
-      )),
-      shatterQuaternion: mesh.quaternion.clone().multiply(
-        new THREE.Quaternion().setFromAxisAngle(shatterAxis, shatterAngle)
-      ),
       animLift: 0,
       driftPhase: idx * 1.3
     };
@@ -289,7 +273,7 @@ function buildGlassShards() {
 }
 
 /**
- * Input & Gesture Event Setup
+ * Touch Event Setup
  */
 function setupTouchEvents() {
   const canvas = renderer.domElement;
@@ -305,6 +289,7 @@ function setupTouchEvents() {
 }
 
 function handleDown(x, y) {
+  if (isTransitioning) return;
   isPointerDown = true;
   touchX = x;
   touchY = window.innerHeight - y;
@@ -316,7 +301,7 @@ function handleDown(x, y) {
 }
 
 function handleMove(x, y) {
-  if (!isPointerDown) return;
+  if (!isPointerDown || isTransitioning) return;
   const dx = (x / window.innerWidth) - 0.5;
   const dy = (y / window.innerHeight) - 0.5;
 
@@ -348,125 +333,91 @@ function checkShardHit(x, y) {
   raycaster.setFromCamera(mouseVector, camera);
   const intersects = raycaster.intersectObjects(shards);
 
-  if (intersects.length > 0 && !isShattered) {
+  if (intersects.length > 0) {
     const hit = intersects[0].object;
     hit.userData.animLift = 0.05 * panelScale;
   }
 }
 
 /**
- * UI Controls & View Transition Setup
+ * Dedicated ~280ms 3D Sign-In Exit Transition
  */
-function setupUIEvents() {
-  const btnHow = document.getElementById('btn-how-it-works');
-  const btnBack = document.getElementById('btn-back');
-  const viewHero = document.getElementById('view-hero');
-  const viewJourney = document.getElementById('view-journey');
-  const canvas = document.getElementById('webgl-canvas');
+function triggerSignInExit(onComplete) {
+  if (isTransitioning) return;
+  isTransitioning = true;
 
-  if (btnHow) {
-    btnHow.addEventListener('click', () => {
-      if (isShattered) return;
-      triggerShatter(true);
-      setTimeout(() => {
-        isSceneActive = false; // Stop RAF loop while on Journey view
-        if (canvas) {
-          canvas.style.opacity = '0';
-          canvas.style.pointerEvents = 'none';
-        }
-        if (viewHero) {
-          viewHero.classList.remove('active');
-          viewHero.classList.add('hidden');
-          viewHero.setAttribute('aria-hidden', 'true');
-        }
-        if (viewJourney) {
-          viewJourney.classList.remove('hidden');
-          viewJourney.classList.add('active');
-          viewJourney.setAttribute('aria-hidden', 'false');
-        }
-      }, 900);
-    });
+  // Immediate fallback if WebGL or scene is not active
+  if (CONFIG.reducedMotion || !renderer || !scene || !shardGroup) {
+    if (onComplete) onComplete();
+    return;
   }
 
-  if (btnBack) {
-    btnBack.addEventListener('click', (e) => {
-      if (!isShattered) return;
-      isSceneActive = true; // Re-enable scene rendering
-      if (canvas) {
-        canvas.style.opacity = '1';
-        canvas.style.pointerEvents = 'auto';
-      }
-      if (viewJourney) {
-        viewJourney.classList.remove('active');
-        viewJourney.classList.add('hidden');
-        viewJourney.setAttribute('aria-hidden', 'true');
-      }
-
-      triggerShatter(false);
-
-      setTimeout(() => {
-        if (viewHero) {
-          viewHero.classList.remove('hidden');
-          viewHero.classList.add('active');
-          viewHero.setAttribute('aria-hidden', 'false');
-        }
-      }, 250);
-    });
-  }
-
-  document.getElementById('btn-fallback-how')?.addEventListener('click', () => {
-    document.getElementById('view-hero')?.classList.add('hidden');
-    document.getElementById('view-journey')?.classList.remove('hidden');
-    document.getElementById('view-journey')?.classList.add('active');
-  });
-}
-
-function triggerShatter(forward) {
-  isShattered = forward;
-  isReassembling = !forward;
-  shatterProgress = forward ? 0.0 : 1.0;
+  const duration = 0.28; // ~280ms
+  let elapsed = 0;
   requestDemandFrame();
-}
 
-function updateShatter(delta) {
-  const speed = delta / CONFIG.shatterDuration;
-  if (isShattered && shatterProgress < 1.0) {
-    shatterProgress = Math.min(1.0, shatterProgress + speed);
-  } else if (isReassembling && shatterProgress > 0.0) {
-    shatterProgress = Math.max(0.0, shatterProgress - speed * 1.8);
-    if (shatterProgress === 0.0) isReassembling = false;
-  }
+  const exitInterval = setInterval(() => {
+    elapsed += 0.03;
+    const progress = Math.min(1.0, elapsed / duration);
 
-  let isMoving = (isShattered && shatterProgress < 1.0) || isReassembling;
-
-  shards.forEach((shard, idx) => {
-    const delay = idx * 0.06;
-    const localProg = Math.max(0, Math.min(1, (shatterProgress - delay) / (1.0 - delay)));
-    const ease = localProg * (2 - localProg);
-
-    if (ease > 0) {
-      shard.position.lerpVectors(shard.userData.basePos, shard.userData.shatterPos, ease);
-      shard.quaternion.slerpQuaternions(shard.userData.origQuaternion, shard.userData.shatterQuaternion, ease);
-    } else {
-      const drift = Math.sin(clock.getElapsedTime() * 0.4 + shard.userData.driftPhase) * 0.015;
-      shard.position.x = shard.userData.basePos.x;
-      shard.position.y = shard.userData.basePos.y + drift;
-      shard.position.z = shard.userData.basePos.z + shard.userData.animLift;
-      shard.quaternion.copy(shard.userData.origQuaternion);
+    if (shardGroup) {
+      shardGroup.position.z = progress * 3.5;
+      shardGroup.rotation.y = currentTiltY + progress * 0.4;
     }
-  });
 
-  return isMoving;
+    renderFrame();
+
+    if (progress >= 1.0) {
+      clearInterval(exitInterval);
+      if (onComplete) {
+        onComplete();
+        onComplete = null;
+      }
+    }
+  }, 16);
+
+  // One-shot fallback safety timeout
+  setTimeout(() => {
+    clearInterval(exitInterval);
+    if (onComplete) {
+      onComplete();
+      onComplete = null;
+    }
+  }, 320);
 }
 
 /**
- * Demand-driven Render Scheduler
+ * UI Event Registration
+ */
+function setupUIEvents() {
+  const btnSignIn = document.getElementById('btn-sign-in');
+
+  const handleSignIn = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (isTransitioning) return;
+
+    triggerSignInExit(() => {
+      window.location.href = 'sportspot://login';
+    });
+  };
+
+  if (btnSignIn) {
+    btnSignIn.addEventListener('click', handleSignIn);
+  }
+}
+
+/**
+ * Demand-Driven Render Scheduler
  */
 function requestDemandFrame() {
   if (!isSceneActive || !renderer) return;
   if (!isRenderLoopRunning) {
     isRenderLoopRunning = true;
-    clock.getDelta(); // Reset clock delta before starting loop
+    clock.getDelta();
     animate();
   }
 }
@@ -484,10 +435,8 @@ function animate() {
 
   animFrameId = requestAnimationFrame(animate);
 
-  // Clamp delta to 0.05s max to prevent large animation jumps on resume
   const delta = Math.min(clock.getDelta(), 0.05);
 
-  // Smooth global tilt interpolation
   const tiltDiffX = targetTiltX - currentTiltX;
   const tiltDiffY = targetTiltY - currentTiltY;
   currentTiltX += tiltDiffX * 0.08;
@@ -498,19 +447,26 @@ function animate() {
     shardGroup.rotation.y = currentTiltY;
   }
 
-  // Touch glow fade out
   if (touchUniforms.uTouchIntensity.value > 0.0) {
     touchUniforms.uTouchIntensity.value = Math.max(0, touchUniforms.uTouchIntensity.value - delta * 1.5);
   }
 
-  const isShatterActive = updateShatter(delta);
+  // Floating ambient drift for resting shards
+  shards.forEach((shard) => {
+    if (!isTransitioning) {
+      const drift = Math.sin(clock.getElapsedTime() * 0.4 + shard.userData.driftPhase) * 0.015;
+      shard.position.x = shard.userData.basePos.x;
+      shard.position.y = shard.userData.basePos.y + drift;
+      shard.position.z = shard.userData.basePos.z + shard.userData.animLift;
+    }
+  });
+
   renderFrame();
 
-  // Check if scene has settled into a resting static state to stop RAF loop and save CPU/GPU
   const isTilting = Math.abs(tiltDiffX) > 0.0001 || Math.abs(tiltDiffY) > 0.0001 || isPointerDown;
   const isGlowing = touchUniforms.uTouchIntensity.value > 0.001;
 
-  if (!isShatterActive && !isTilting && !isGlowing && shatterProgress === 0.0) {
+  if (!isTransitioning && !isTilting && !isGlowing) {
     isRenderLoopRunning = false;
     if (animFrameId) {
       cancelAnimationFrame(animFrameId);
@@ -529,7 +485,7 @@ function onVisibilityChange() {
     isRenderLoopRunning = false;
   } else {
     isSceneActive = true;
-    clock.getDelta(); // Reset delta on app resume
+    clock.getDelta();
     renderFrame();
     requestDemandFrame();
   }
@@ -555,7 +511,7 @@ function showFallback() {
 }
 
 /**
- * Idempotent Resource Disposal API
+ * Idempotent Resource Disposal
  */
 function dispose() {
   isSceneActive = false;
@@ -605,24 +561,5 @@ function dispose() {
     renderer = null;
   }
 }
-
-// Global hook for Activity / WebView lifecycle control
-window.SportSpotHero = {
-  dispose,
-  pause: () => {
-    isSceneActive = false;
-    if (animFrameId) {
-      cancelAnimationFrame(animFrameId);
-      animFrameId = null;
-    }
-    isRenderLoopRunning = false;
-  },
-  resume: () => {
-    isSceneActive = true;
-    clock.getDelta();
-    renderFrame();
-    requestDemandFrame();
-  }
-};
 
 window.addEventListener('DOMContentLoaded', init);

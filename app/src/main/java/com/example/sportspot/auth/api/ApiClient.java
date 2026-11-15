@@ -15,7 +15,8 @@ public class ApiClient {
     public static AuthApiService getAuthApiService() {
         if (retrofit == null) {
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
-            interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+            // Header-level logging to protect passwords, secrets, and auth tokens from being printed in logs
+            interceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
 
             OkHttpClient client = new OkHttpClient.Builder()
                     .addInterceptor(interceptor)

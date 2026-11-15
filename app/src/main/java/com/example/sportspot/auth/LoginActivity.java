@@ -44,6 +44,11 @@ public class LoginActivity extends AppCompatActivity {
 
         TextView tvForgotPassword = findViewById(R.id.tvForgotPassword);
         TextView tvRegister = findViewById(R.id.tvRegister);
+        View btnBackToHome = findViewById(R.id.btnBackToHome);
+
+        if (btnBackToHome != null) {
+            btnBackToHome.setOnClickListener(v -> finish());
+        }
 
         btnLogin.setOnClickListener(v -> attemptLogin());
 

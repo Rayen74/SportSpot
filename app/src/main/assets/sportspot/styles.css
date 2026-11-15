@@ -54,7 +54,8 @@ html, body {
   height: 100%;
   z-index: 1;
   pointer-events: auto;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.3s ease;
+  will-change: opacity;
 }
 
 .ui-layer {
@@ -122,7 +123,6 @@ html, body {
 }
 
 /* Main Typography */
-
 .hero-content {
   margin: auto 0;
   display: flex;
@@ -172,37 +172,21 @@ html, body {
   background: var(--orange-primary);
   color: #050507;
   font-weight: 700;
-  font-size: 0.95rem;
-  padding: 14px 28px;
+  font-size: 0.98rem;
+  padding: 16px 36px;
   border-radius: 999px;
   text-decoration: none;
   cursor: pointer;
   border: none;
   transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.25);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.35);
+  touch-action: manipulation;
 }
 
 .btn-primary:active {
   background: var(--orange-dark);
   transform: scale(0.97);
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
-}
-
-.btn-secondary {
-  background: none;
-  border: none;
-  color: var(--text-main);
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 6px 4px;
-  display: inline-flex;
-  align-items: center;
-  transition: color 0.2s ease;
-}
-
-.btn-secondary:active {
-  color: var(--lavender-glow);
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.2);
 }
 
 .hero-footer {
@@ -213,83 +197,6 @@ html, body {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: var(--text-secondary);
-}
-
-/* Second View: Journey */
-.back-nav-container {
-  pointer-events: auto !important;
-  margin-bottom: 24px;
-  position: relative;
-  z-index: 100;
-}
-
-.btn-back-shard {
-  pointer-events: auto !important;
-  touch-action: manipulation;
-  background: rgba(23, 23, 27, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 12px 22px;
-  color: var(--text-main);
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(12px);
-  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
-}
-
-.back-text {
-  pointer-events: none;
-}
-
-.btn-back-shard:active {
-  color: var(--lavender-glow);
-  border-color: var(--lavender-glow);
-  transform: scale(0.96);
-}
-
-.journey-content {
-  pointer-events: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  margin-bottom: auto;
-}
-
-.journey-title {
-  font-size: clamp(1.8rem, 7vw, 2.3rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
-}
-
-.journey-intro {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  line-height: 1.45;
-}
-
-.journey-steps {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 10px;
-}
-
-.step-item {
-  font-size: 0.92rem;
-  line-height: 1.4;
-}
-
-.step-label {
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.step-desc {
   color: var(--text-secondary);
 }
 

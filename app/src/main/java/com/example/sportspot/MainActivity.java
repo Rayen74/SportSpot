@@ -16,7 +16,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,38 +43,6 @@ public class MainActivity extends AppCompatActivity {
         applyEdgeToEdge();
         initAssetLoader();
         initWebView();
-        setupBackNavigation();
-    }
-
-    private void setupBackNavigation() {
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (webView != null) {
-                    webView.evaluateJavascript(
-                        "(function() { " +
-                        "  var btnBack = document.getElementById('btn-back'); " +
-                        "  var viewJourney = document.getElementById('view-journey'); " +
-                        "  if (viewJourney && viewJourney.classList.contains('active')) { " +
-                        "    if (btnBack) { btnBack.click(); return true; } " +
-                        "  } " +
-                        "  return false; " +
-                        "})();",
-                        value -> {
-                            if (!"true".equals(value)) {
-                                setEnabled(false);
-                                getOnBackPressedDispatcher().onBackPressed();
-                                setEnabled(true);
-                            }
-                        }
-                    );
-                } else {
-                    setEnabled(false);
-                    getOnBackPressedDispatcher().onBackPressed();
-                    setEnabled(true);
-                }
-            }
-        });
     }
 
     private void applyEdgeToEdge() {
@@ -177,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (webView != null) {
             webView.onResume();
-            webView.resumeTimers();
+            webView.evaluateJavascript("if (window.SportSpotHero && typeof window.SportSpotHero.resume === 'function') { window.SportSpotHero.resume(); }", null);
         }
     }
 
@@ -185,14 +152,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if (webView != null) {
+            webView.evaluateJavascript("if (window.SportSpotHero && typeof window.SportSpotHero.pause === 'function') { window.SportSpotHero.pause(); }", null);
             webView.onPause();
-            webView.pauseTimers();
         }
     }
 
     @Override
     protected void onDestroy() {
         if (webView != null) {
+            webView.evaluateJavascript("if (window.SportSpotHero && typeof window.SportSpotHero.dispose === 'function') { window.SportSpotHero.dispose(); }", null);
             webView.destroy();
             webView = null;
         }
